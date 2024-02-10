@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup  # Only if you need to parse HTML
 import pandas as pd
 import tqdm
 import time
+import re
 
 def check_proxy(proxy): 
 	""" 
@@ -53,42 +54,49 @@ def make_request():
     print("Gathered Soup...")
     return soup
 
-def parse_soup(soup_object):
-    prop_soup = soup_object.findAll('tr')
-    return prop_soup
-    
+def find_games(soup_object): 
+    game_list = soup_object.findAll('div', class_='sportsbook-event-accordion__wrapper expanded')
+    return game_list
 
-def create_data_table(rows):
+def create_data_table(game_list):
     data = []
-    for row in rows:
-        player_name = row.find('span', class_='sportsbook-row-name').text if row.find('span', class_='sportsbook-row-name') else 'N/A'
-        
-        # Variables to store over and under odds and O/U values, initializing them to 'N/A'
-        ou_value_over, odds_over = 'N/A', 'N/A'
-        ou_value_under, odds_under = 'N/A', 'N/A'
-        
-        # Find all outcomes in the row (assuming one for over and one for under)
-        outcomes = row.find_all('div', class_='sportsbook-outcome-cell__body')
-        for outcome in outcomes:
-            label = outcome.find('span', class_='sportsbook-outcome-cell__label').text if outcome.find('span', class_='sportsbook-outcome-cell__label') else 'N/A'
-            ou_value = outcome.find('span', class_='sportsbook-outcome-cell__line').text if outcome.find('span', class_='sportsbook-outcome-cell__line') else 'N/A'
-            odds = outcome.find('span', class_='sportsbook-odds').text if outcome.find('span', class_='sportsbook-odds') else 'N/A'
+    for game in game_list:
+        team_names_div = game.find('div', {'aria-label': re.compile(r'^Event Accordion for.*')})
+        if team_names_div:
+            # The team names are in the 'aria-label' attribute
+            teams = team_names_div['aria-label'].replace('Event Accordion for ', '')
+        else:
+            teams = 'Teams not found'
+        rows = game.findAll('tr')
+        for row in rows:
+            player_name = row.find('span', class_='sportsbook-row-name').text if row.find('span', class_='sportsbook-row-name') else 'N/A'
             
-            # Check if the outcome is over or under and assign values accordingly
-            if label.startswith('O'):
-                ou_value_over = ou_value
-                odds_over = odds
-            elif label.startswith('U'):
-                ou_value_under = ou_value
-                odds_under = odds
+            # Variables to store over and under odds and O/U values, initializing them to 'N/A'
+            ou_value_over, odds_over = 'N/A', 'N/A'
+            ou_value_under, odds_under = 'N/A', 'N/A'
+            
+            # Find all outcomes in the row (assuming one for over and one for under)
+            outcomes = row.find_all('div', class_='sportsbook-outcome-cell__body')
+            for outcome in outcomes:
+                label = outcome.find('span', class_='sportsbook-outcome-cell__label').text if outcome.find('span', class_='sportsbook-outcome-cell__label') else 'N/A'
+                ou_value = outcome.find('span', class_='sportsbook-outcome-cell__line').text if outcome.find('span', class_='sportsbook-outcome-cell__line') else 'N/A'
+                odds = outcome.find('span', class_='sportsbook-odds').text if outcome.find('span', class_='sportsbook-odds') else 'N/A'
+                
+                # Check if the outcome is over or under and assign values accordingly
+                if label.startswith('O'):
+                    ou_value_over = ou_value
+                    odds_over = odds
+                elif label.startswith('U'):
+                    ou_value_under = ou_value
+                    odds_under = odds
 
-        # Append the data for the current row to the list
-        data.append({'Player Name': player_name, 'O/U': ou_value_over, 'Odds for Over': odds_over, 'Odds for Under': odds_under})
+            # Append the data for the current row to the list
+            data.append({'Teams' : teams, 'Player Name': player_name, 'O/U': ou_value_over, 'Odds for Over': odds_over, 'Odds for Under': odds_under})
 
     # Convert list of dictionaries to DataFrame
     df = pd.DataFrame(data)
     print("Created df, now saving...")
-    df.to_excel('D:\HDD Coding\Python\PersonalProjects\DKScraper\Dataframes\Finaloutput.xlsx')
+    df.to_excel('D:\HDD Coding\Python\PersonalProjects\DKScraper\Dataframes\Testoutput.xlsx')
     return df
 
 def generate_player_slug(full_name):
@@ -162,9 +170,11 @@ def add_stats(df):
 
 def main():
     soup = make_request()
-    prop_soup = parse_soup(soup)
+    prop_soup = find_games(soup)
+    print(prop_soup)
+    input('cont?')
     df = create_data_table(prop_soup)
-    df = pd.read_excel('D:\HDD Coding\Python\PersonalProjects\DKScraper\Dataframes\Finaloutput.xlsx')
-    add_stats(df)
+    # df = pd.read_excel('D:\HDD Coding\Python\PersonalProjects\DKScraper\Dataframes\Finaloutput.xlsx')
+    # add_stats(df)
 
 main()
