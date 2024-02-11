@@ -96,7 +96,7 @@ def create_data_table(game_list):
     # Convert list of dictionaries to DataFrame
     df = pd.DataFrame(data)
     print("Created df, now saving...")
-    df.to_excel('D:\HDD Coding\Python\PersonalProjects\DKScraper\Dataframes\Testoutput.xlsx')
+    df.to_excel('D:\HDD Coding\Python\PersonalProjects\DKScraper\Dataframes\Finaloutput.xlsx')
     return df
 
 def generate_player_slug(full_name):
@@ -171,10 +171,8 @@ def add_stats(df):
 def main():
     soup = make_request()
     prop_soup = find_games(soup)
-    print(prop_soup)
-    input('cont?')
     df = create_data_table(prop_soup)
-    # df = pd.read_excel('D:\HDD Coding\Python\PersonalProjects\DKScraper\Dataframes\Finaloutput.xlsx')
-    # add_stats(df)
+    df = pd.read_excel('D:\HDD Coding\Python\PersonalProjects\DKScraper\Dataframes\Finaloutput.xlsx')
+    add_stats(df)
 
 main()
