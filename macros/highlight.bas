@@ -25,6 +25,19 @@ Sub HighlightCellsBasedOnValue()
                     cell.Interior.ColorIndex = xlNone
                 End If
             End If
+        For Each cell In ws.Range("I" & i & ":K" & i)
+            If Not IsError(cell.Value) Then
+                If cell.Value < 30 Then
+                    ' Highlight the cell red
+                    cell.Interior.Color = RGB(0, 255, 0) ' Red
+                ElseIf cell.Value > 70 Then
+                    ' Highlight the cell green
+                    cell.Interior.Color = RGB(255, 0, 0) ' Green
+                Else
+                    ' Clear any existing background color if the value is between 30 and 70
+                    cell.Interior.ColorIndex = xlNone
+                End If
+            End If
         Next cell
     Next i
 End Sub
