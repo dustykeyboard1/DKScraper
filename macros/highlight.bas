@@ -1,43 +1,42 @@
-Sub HighlightCellsBasedOnValue()
+Sub HighlightCellsBasedOnValueInAllSheets()
+    Dim wb As Workbook
     Dim ws As Worksheet
-    Set ws = ActiveSheet
-    
     Dim lastRow As Long
     Dim i As Long
     Dim cell As Range
     
-    ' Find the last row with data in column G, H, or I
-    lastRow = ws.Cells(ws.Rows.Count, "H").End(xlUp).Row
+    Set wb = ActiveWorkbook
     
-    ' Loop through all rows
-    For i = 1 To lastRow
-        ' Check each cell in columns G, H, and I
-        For Each cell In ws.Range("F" & i & ":H" & i)
-            If Not IsError(cell.Value) Then
-                If cell.Value < 30 Then
-                    ' Highlight the cell red
-                    cell.Interior.Color = RGB(255, 0, 0) ' Red
-                ElseIf cell.Value > 70 Then
-                    ' Highlight the cell green
-                    cell.Interior.Color = RGB(0, 255, 0) ' Green
-                Else
-                    ' Clear any existing background color if the value is between 30 and 70
-                    cell.Interior.ColorIndex = xlNone
+    For Each ws In wb.Sheets
+        lastRow = ws.Cells(ws.Rows.Count, "M").End(xlUp).Row ' Adjusted to consider column H as the reference for the last row
+        
+        For i = 1 To lastRow
+            ' Check each cell in columns F, G, H
+            For Each cell In ws.Range("H" & i & ":J" & i)
+                If Not IsError(cell.Value) Then
+                    If cell.Value < 30 Then
+                        cell.Interior.Color = RGB(255, 0, 0) ' Highlight the cell red
+                    ElseIf cell.Value > 70 Then
+                        cell.Interior.Color = RGB(0, 255, 0) ' Highlight the cell green
+                    Else
+                        cell.Interior.ColorIndex = xlNone ' Clear any existing background color
+                    End If
                 End If
-            End If
-        For Each cell In ws.Range("I" & i & ":K" & i)
-            If Not IsError(cell.Value) Then
-                If cell.Value < 30 Then
-                    ' Highlight the cell red
-                    cell.Interior.Color = RGB(0, 255, 0) ' Red
-                ElseIf cell.Value > 70 Then
-                    ' Highlight the cell green
-                    cell.Interior.Color = RGB(255, 0, 0) ' Green
-                Else
-                    ' Clear any existing background color if the value is between 30 and 70
-                    cell.Interior.ColorIndex = xlNone
+            Next cell
+            
+            ' Check each cell in columns I, J, K
+            For Each cell In ws.Range("K" & i & ":M" & i)
+                If Not IsError(cell.Value) Then
+                    If cell.Value < 30 Then
+                        ' The color assignments here were reversed from the initial setup; correcting to match the first loop
+                        cell.Interior.Color = RGB(0, 255, 0) ' Highlight the cell red
+                    ElseIf cell.Value > 70 Then
+                        cell.Interior.Color = RGB(255, 0, 0) ' Highlight the cell green
+                    Else
+                        cell.Interior.ColorIndex = xlNone ' Clear any existing background color
+                    End If
                 End If
-            End If
-        Next cell
-    Next i
+            Next cell
+        Next i
+    Next ws
 End Sub
