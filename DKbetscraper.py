@@ -3,13 +3,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
-import json
+import re
+import pandas as pd
 
 
 class DraftKingsScraper:
     def __init__(self):
         self.base_url = "https://sportsbook.draftkings.com/nba-player-props"
-        self.browser = webdriver.Chrome()  # Adjust if you're using a different browser
+        self.browser = webdriver.Edge()  # Adjust if you're using a different browser
         self.wait = WebDriverWait(self.browser, 180)
 
     def navigate_and_load(self, catagory, subcategory):
@@ -38,6 +39,82 @@ class DraftKingsScraper:
         games = soup.find_all(class_="sportsbook-event-accordion__wrapper expanded")
         return games
 
+    def parse_game_data(self, game):
+        """Extracts and returns the team names, player names, and odds from a game."""
+        data = []
+        team_names_div = game.find(
+            "div", {"aria-label": re.compile(r"^Event Accordion for.*")}
+        )
+        teams = (
+            team_names_div["aria-label"].replace("Event Accordion for ", "")
+            if team_names_div
+            else "Teams not found"
+        )
+
+        rows = game.findAll("tr")
+        for row in rows:
+            data.append(self.parse_row_data(row, teams))
+        return data
+
+    def parse_row_data(self, row, teams):
+        """Extracts data from a single row."""
+        player_name = (
+            row.find("span", class_="sportsbook-row-name").text
+            if row.find("span", class_="sportsbook-row-name")
+            else "N/A"
+        )
+        ou_value_over, odds_over, ou_value_under, odds_under = self.extract_odds(row)
+
+        return {
+            "Teams": teams,
+            "Player Name": player_name,
+            "O/U": ou_value_over,
+            "Odds for Over": odds_over,
+            "Odds for Under": odds_under,
+        }
+
+    def extract_odds(self, row):
+        """Extracts over/under values and odds from a row."""
+        ou_value_over = ou_value_under = odds_over = odds_under = "N/A"
+        outcomes = row.find_all("div", class_="sportsbook-outcome-cell__body")
+        for outcome in outcomes:
+            label, ou_value, odds = self.parse_outcome(outcome)
+            if label.startswith("O"):
+                ou_value_over, odds_over = ou_value, odds
+            elif label.startswith("U"):
+                ou_value_under, odds_under = ou_value, odds
+        return ou_value_over, odds_over, ou_value_under, odds_under
+
+    def parse_outcome(self, outcome):
+        """Extracts label, over/under value, and odds from an outcome."""
+        label = (
+            outcome.find("span", class_="sportsbook-outcome-cell__label").text
+            if outcome.find("span", class_="sportsbook-outcome-cell__label")
+            else "N/A"
+        )
+        ou_value = (
+            outcome.find("span", class_="sportsbook-outcome-cell__line").text
+            if outcome.find("span", class_="sportsbook-outcome-cell__line")
+            else "N/A"
+        )
+        odds = (
+            outcome.find("span", class_="sportsbook-odds").text
+            if outcome.find("span", class_="sportsbook-odds")
+            else "N/A"
+        )
+        return label, ou_value, odds
+
+    def create_data_table(self, odds_data):
+        """Creates a DataFrame from the structured odds data."""
+        all_data = []
+        stat_dict = {}
+        for key, games in odds_data.items():
+            for game in games:
+                all_data.extend(self.parse_game_data(game))
+            df = pd.DataFrame(all_data)
+            stat_dict[key] = df
+        return stat_dict
+
     def scrape_odds(self):
         url_list = [
             ("player-combos", "pts-%2B-reb-%2B-ast", "PRA"),
@@ -56,11 +133,7 @@ class DraftKingsScraper:
 
 
 # Example usage
-scraper = DraftKingsScraper()
-odds_data = scraper.scrape_odds()
-for key, value in odds_data.items():
-    print(f"Key: {key}")
-    print("\n")
-    for item in value:
-        print(f"Value: {item.text}")
-    print("\n")
+# scraper = DraftKingsScraper()
+# odds_data = scraper.scrape_odds()
+# info = scraper.create_data_table(odds_data)
+# print(info.head())

@@ -8,21 +8,27 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 import joblib
 from DKbetscraper import DraftKingsScraper
+from data_structure import PlayerPerformanceAnalyzer
 
 
 def fetch_daily_data():
     """
     Scrape daily NBA player prop odds, player statistics, and team defensive ratings.
     """
-    # Implement scraping logic here
-    pass
+    DKS = DraftKingsScraper()
+    odds_data = DKS.scrape_odds()
+    odds_info = DKS.create_data_table(odds_data)
+    return odds_info
 
 
-def process_data():
+def process_data(odds_df):
     """
     Process scraped data into a structured format for analysis.
     """
-    # Implement data processing logic here
+    PPA = PlayerPerformanceAnalyzer(odds_df)
+    PPA.fetch_player_yearly_data()
+    PPA.enrich_with_coverage()
+    PPA.write_dataframe()
     pass
 
 
@@ -64,31 +70,33 @@ def main():
     """
     # Step 1: Fetch Daily Data
     daily_data = fetch_daily_data()
+    # print(daily_data)
+    # print(type(daily_data))
 
     # Step 2: Process Data
     processed_data = process_data(daily_data)
 
-    # Step 3: Load Existing Model or Initialize New One
-    try:
-        model = joblib.load("model.pkl")
-    except FileNotFoundError:
-        model = RandomForestRegressor()
+    # # Step 3: Load Existing Model or Initialize New One
+    # try:
+    #     model = joblib.load("model.pkl")
+    # except FileNotFoundError:
+    #     model = RandomForestRegressor()
 
-    # Step 4: Generate Predictions
-    predictions = generate_predictions(model, processed_data)
+    # # Step 4: Generate Predictions
+    # predictions = generate_predictions(model, processed_data)
 
-    # Step 5: Save Predictions
-    save_predictions(predictions)
+    # # Step 5: Save Predictions
+    # save_predictions(predictions)
 
-    # Step 6: (Next Day) Evaluate Predictions Against Actual Outcomes
-    actual_outcomes = "Fetch actual outcomes"  # Placeholder
-    evaluate_predictions(predictions, actual_outcomes)
+    # # Step 6: (Next Day) Evaluate Predictions Against Actual Outcomes
+    # actual_outcomes = "Fetch actual outcomes"  # Placeholder
+    # evaluate_predictions(predictions, actual_outcomes)
 
-    # Step 7: Update Model Based on Evaluation
-    update_model(processed_data, actual_outcomes)
+    # # Step 7: Update Model Based on Evaluation
+    # update_model(processed_data, actual_outcomes)
 
-    # Save updated model
-    joblib.dump(model, "model.pkl")
+    # # Save updated model
+    # joblib.dump(model, "model.pkl")
 
 
 if __name__ == "__main__":
