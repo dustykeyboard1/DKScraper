@@ -10,7 +10,7 @@ import pandas as pd
 class DraftKingsScraper:
     def __init__(self):
         self.base_url = "https://sportsbook.draftkings.com/nba-player-props"
-        self.browser = webdriver.Edge()  # Adjust if you're using a different browser
+        self.browser = webdriver.Chrome()  # Adjust if you're using a different browser
         self.wait = WebDriverWait(self.browser, 180)
 
     def navigate_and_load(self, catagory, subcategory):
@@ -106,9 +106,9 @@ class DraftKingsScraper:
 
     def create_data_table(self, odds_data):
         """Creates a DataFrame from the structured odds data."""
-        all_data = []
         stat_dict = {}
         for key, games in odds_data.items():
+            all_data = []
             for game in games:
                 all_data.extend(self.parse_game_data(game))
             df = pd.DataFrame(all_data)

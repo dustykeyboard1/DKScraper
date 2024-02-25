@@ -3,8 +3,11 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from scipy.stats import percentileofscore
 from NBAReferenceScraper import PlayerStatsScraper
-import tqdm
+from tqdm import tqdm
+from tqdm.auto import tqdm
 import traceback
+
+tqdm.pandas()
 
 
 class PlayerPerformanceAnalyzer:
@@ -39,15 +42,24 @@ class PlayerPerformanceAnalyzer:
             relevant_stats = None
         return relevant_stats
 
-    def add_new_columns(
-        self,
-        row,
-        ou_value,
-        relevant_stats,
-        stat_type,
-        player_position,
-        player_team,
-    ):
+    def add_new_columns(self, row, stat_type):
+        # Assuming stats_scraper is an instance of a class that has the necessary methods
+        player_name = row["Player Name"]
+        if player_name == "N/A":
+            return row  # Return the row unchanged if player name is not available
+
+        ou_value = float(row["O/U"])
+        self.stats_Scraper.fetch_player_stats(player_name)
+        player_stats = self.stats_Scraper.return_Cache_value(player_name)
+        game_stats, player_team, player_position = (
+            player_stats[0],
+            player_stats[1],
+            player_stats[2],
+        )
+
+        relevant_stats = self.gather_relevant_stats(
+            stat_type, game_stats
+        )  # Assuming this function exists and is defined elsewhere
         row["Season Over Covered %"] = self.calculate_coverage(
             ou_value,
             relevant_stats,
@@ -67,32 +79,16 @@ class PlayerPerformanceAnalyzer:
 
         row["Position"] = player_position
         row["Team"] = player_team
+        return row
 
     def enrich_with_coverage(self):
         for stat_type, df in self.df.items():
-            for index, row in tqdm.tqdm(
-                df.iterrows(), total=df.shape[0], desc=f"Processing {stat_type}"
-            ):
-                try:
-                    player_name = row["Player Name"]
-                    ou_value = float(row["O/U"])
-                    self.stats_Scraper.fetch_player_stats(player_name)
-                    player_stats = self.stats_Scraper.return_Cache_value(player_name)
-                    game_stats = player_stats[0]
-                    player_team = player_stats[1]
-                    player_position = player_stats[2]
-                    relevant_stats = self.gather_relevant_stats(stat_type, game_stats)
-                    self.add_new_columns(
-                        row,
-                        ou_value,
-                        relevant_stats,
-                        stat_type,
-                        player_position,
-                        player_team,
-                    )
-                except Exception as e:
-                    print(f"Error Processing stats for {player_name}.")
-                    print(traceback.format_exc())
+            print(f"Processing {stat_type}.")
+            # Limit the operation to the first 5 rows for easier testing and demonstration
+            # Ensure to reassign the processed DataFrame slice back to the original DataFrame
+            self.df[stat_type].iloc[:5] = df.iloc[:5].progress_apply(
+                lambda row: self.add_new_columns(row, stat_type), axis=1
+            )
 
     def calculate_coverage(self, ou, game_stats, multiple):
 
@@ -123,7 +119,7 @@ class PlayerPerformanceAnalyzer:
 
     def write_dataframe(self):
         with pd.ExcelWriter(
-            "DKScraper\Dataframes\Testoutput.xlsx", engine="xlsxwriter"
+            "DataFrames/testoutput.xlsx", engine="xlsxwriter"
         ) as writer:
             for stat_type, df in self.df.items():
                 df.to_excel(writer, sheet_name=stat_type)

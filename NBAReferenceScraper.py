@@ -5,6 +5,15 @@ import pandas as pd
 import time
 import re
 
+position_mapping = {
+    "Shooting Guard": "SG",
+    "Point Guard": "PG",
+    "Small Forward": "SF",
+    "Power Forward": "PF",
+    "Center": "C",
+    # Add any other positions as necessary
+}
+
 
 class PlayerStatsScraper:
     def __init__(self):
@@ -73,7 +82,24 @@ class PlayerStatsScraper:
                     if soup.findAll("td", {"data-stat": "team_id"})
                     else "Free Agent"
                 )
-                player_position = "Position parsing needs adjustment"  # Adjust position parsing based on your requirements
+                # Extract position text
+                position_text = (
+                    soup.select_one(
+                        "p:-soup-contains('Position') > strong"
+                    ).next_sibling
+                    if soup.select_one("p:-soup-contains('Position')")
+                    else "Unknown"
+                )
+
+                # Clean up the position text to get just the primary position
+                primary_position = (
+                    position_text.split("\n")[1].strip().split("and")[0].strip()
+                    if position_text != "Unknown"
+                    else "Unknown"
+                )
+
+                # Map the primary position to its abbreviation
+                player_position = position_mapping.get(primary_position, "Unknown")
                 self.player_stats_cache[player_name] = [
                     game_stats,
                     player_team,
@@ -90,6 +116,12 @@ class PlayerStatsScraper:
 
 
 # Example usage:
-# scraper = PlayerStatsScraper()
-# scraper.fetch_player_stats("LeBron James")
+scraper = PlayerStatsScraper()
+scraper.fetch_player_stats("Anthony Davis")
+stats = scraper.return_Cache_value("Anthony Davis")
 # Implement DataFrame creation and analysis methods as needed
+print(stats[0])
+print()
+print(stats[1])
+print()
+print(stats[2])
