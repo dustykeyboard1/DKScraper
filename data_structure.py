@@ -86,7 +86,7 @@ class PlayerPerformanceAnalyzer:
             print(f"Processing {stat_type}.")
             # Limit the operation to the first 5 rows for easier testing and demonstration
             # Ensure to reassign the processed DataFrame slice back to the original DataFrame
-            self.df[stat_type].iloc[:5] = df.iloc[:5].progress_apply(
+            self.df[stat_type] = df.progress_apply(
                 lambda row: self.add_new_columns(row, stat_type), axis=1
             )
 
