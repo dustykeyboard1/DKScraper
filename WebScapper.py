@@ -319,9 +319,9 @@ def calculate_over_percentage(ou, game_stats, multiple=True):
     if multiple:
         games_over = sum(1 for stats in game_stats if sum(stats) > ou)
     else:
-        games_over = sum(1 for stat in game_stats if stat > ou)
+        games_over = sum(1 for stat in game_stats if stat[0] > ou)
     # Calculate the percentage
-    percentage_over = games_over / len(game_stats) * 100 if game_stats else 0
+    percentage_over = games_over / len(game_stats) * 100 if game_stats else -99
     return percentage_over
 
 
@@ -330,7 +330,7 @@ def calculate_percentile(ou, stats_list, multiple=True):
     if multiple:
         combined_stats = [sum(game_stat) for game_stat in stats_list]
     else:
-        combined_stats = [stat for stat in stats_list]
+        combined_stats = [stat[0] for stat in stats_list]
     return percentileofscore(combined_stats, ou, kind="strict")
 
 
@@ -403,11 +403,11 @@ def add_stats_combined(df_dict):
                 elif stat_type == "P+A":
                     relevant_stats = [(pts, ast) for pts, _, ast in game_stats]
                 elif stat_type == "P":
-                    relevant_stats = [(pts) for pts, _, _ in game_stats]
+                    relevant_stats = [(pts,) for pts, _, _ in game_stats]
                 elif stat_type == "R":
-                    relevant_stats = [(trb) for _, trb, _ in game_stats]
+                    relevant_stats = [(trb,) for _, trb, _ in game_stats]
                 elif stat_type == "A":
-                    relevant_stats = [(ast) for _, _, ast in game_stats]
+                    relevant_stats = [(ast,) for _, _, ast in game_stats]
 
                 df.at[index, "Season Over Covered %"] = calculate_over_percentage(
                     ou_value,
