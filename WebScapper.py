@@ -380,9 +380,6 @@ def add_stats_combined(df_dict):
         df["Season Over Covered %"] = 0.0
         df["Last 10 Games Over Covered %"] = 0.0
         df["Last 5 Games Over Covered %"] = 0.0
-        df["Season O/U Percentile"] = 0.0
-        df["Last 10 Games O/U Percentile"] = 0.0
-        df["Last 5 Games O/U Percentile"] = 0.0
 
     for stat_type, df in df_dict.items():
         for index, row in tqdm.tqdm(
