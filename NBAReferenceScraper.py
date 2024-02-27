@@ -59,6 +59,18 @@ class PlayerStatsScraper:
         )
         return percentileofscore(combined_stats, ou, kind="strict")
 
+    def convert_time_to_float(self, time_str):
+        # Split the time string into minutes and seconds
+        minutes, seconds = map(int, time_str.split(":"))
+
+        # Calculate the total time in seconds
+        total_seconds = minutes * 60 + seconds
+
+        # Convert to float (if needed)
+        float_value = total_seconds / 60.0
+
+        return float_value
+
     def fetch_player_stats(self, player_name):
         if player_name not in self.player_stats_cache:
             url = self.generate_player_url(player_name)
@@ -69,14 +81,21 @@ class PlayerStatsScraper:
                 game_rows = soup.findAll(
                     "tr", {"id": lambda x: x and x.startswith("pgl_basic")}
                 )
-                game_stats = [
-                    (
-                        int(row.find("td", {"data-stat": "pts"}).text or 0),
-                        int(row.find("td", {"data-stat": "trb"}).text or 0),
-                        int(row.find("td", {"data-stat": "ast"}).text or 0),
-                    )
-                    for row in game_rows
-                ]
+                game_stats = []
+                minutes_played = []
+
+                for row in game_rows:
+                    # Extracting game statistics
+                    points = int(row.find("td", {"data-stat": "pts"}).text or 0)
+                    rebounds = int(row.find("td", {"data-stat": "trb"}).text or 0)
+                    assists = int(row.find("td", {"data-stat": "ast"}).text or 0)
+                    game_stats.append((points, rebounds, assists))
+                    # Extracting minutes played
+                    minutes = row.find("td", {"data-stat": "mp"}).text.strip() or "0"
+                    float_minutes = self.convert_time_to_float(minutes)
+
+                    minutes_played.append(float_minutes)
+                minutes_played = [num for num in minutes_played if num != 0]
                 player_team = (
                     soup.findAll("td", {"data-stat": "team_id"})[-1].text
                     if soup.findAll("td", {"data-stat": "team_id"})
@@ -104,6 +123,7 @@ class PlayerStatsScraper:
                     game_stats,
                     player_team,
                     player_position,
+                    minutes_played,
                 ]
             else:
                 print(f"Failed to fetch data for {player_name}")
@@ -116,12 +136,12 @@ class PlayerStatsScraper:
 
 
 # Example usage:
-scraper = PlayerStatsScraper()
-scraper.fetch_player_stats("Anthony Davis")
-stats = scraper.return_Cache_value("Anthony Davis")
-# Implement DataFrame creation and analysis methods as needed
-print(stats[0])
-print()
-print(stats[1])
-print()
-print(stats[2])
+# scraper = PlayerStatsScraper()
+# scraper.fetch_player_stats("Caleb Martin")
+# stats = scraper.return_Cache_value("Caleb Martin")
+# # Implement DataFrame creation and analysis methods as needed
+# print(stats[0])
+# print()
+# print(stats[1])
+# print()
+# print(stats[2])

@@ -70,8 +70,6 @@ def main():
     """
     # Step 1: Fetch Daily Data
     daily_data = fetch_daily_data()
-    # print(daily_data)
-    # print(type(daily_data))
 
     # Step 2: Process Data
     processed_data = process_data(daily_data)
