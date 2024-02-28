@@ -10,7 +10,7 @@ import pandas as pd
 class DraftKingsScraper:
     def __init__(self):
         self.base_url = "https://sportsbook.draftkings.com/nba-player-props"
-        self.browser = webdriver.Edge()  # Adjust if you're using a different browser
+        self.browser = webdriver.Chrome()  # Adjust if you're using a different browser
         self.wait = WebDriverWait(self.browser, 180)
 
     def navigate_and_load(self, catagory, subcategory):

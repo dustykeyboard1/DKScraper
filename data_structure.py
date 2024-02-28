@@ -93,7 +93,6 @@ class PlayerPerformanceAnalyzer:
     def get_opposing_team_code(self, game_row, team):
         # Split the game row into home team and away team
         home_team, away_team = game_row.split(" @ ")
-        print(home_team, away_team)
         # Look up team codes
         home_team_code = nba_teams.get(home_team.strip(), "Team not found")
         away_team_code = nba_teams.get(away_team.strip(), "Team not found")
@@ -107,6 +106,36 @@ class PlayerPerformanceAnalyzer:
 
     def calculate_average(self, game_stats):
         return st.mean(sum(stats) for stats in game_stats)
+
+    def calculate_opponents(self, pos, stat_type, team):
+        self.team_Scraper.find_position_opponent_stats(pos)
+        data_dict = self.team_Scraper.return_defensive_cache(pos)
+        return_list = {}
+
+        # Define which columns to sum based on the stat_type
+        stats_columns = {
+            "P": ["PTS"],
+            "R": ["REB"],
+            "A": ["AST"],
+            "PRA": ["PTS", "REB", "AST"],
+            "PR": ["PTS", "REB"],
+            "PA": ["PTS", "AST"],
+        }
+        for period, df in data_dict.items():
+            # Find the row for the specified team
+            team_row = df[df["TEAM"].str.contains(team)]
+
+            # If the team is not found, continue to the next period
+            if team_row.empty:
+                continue
+
+            # Sum the specified stats for the team
+            stats_sum = team_row[stats_to_sum].sum(axis=1).values[0]
+
+            # Add the sum to the return_list under the period key
+            return_list[period] = stats_sum
+
+        return return_list
 
     def add_new_columns(self, row, stat_type):
         # Assuming stats_scraper is an instance of a class that has the necessary methods
@@ -151,7 +180,6 @@ class PlayerPerformanceAnalyzer:
             row["Game Average Minutes"] = st.mean(minute_stats)
             row["Last 10 Games Average Minutes"] = st.mean(minute_stats[-10:])
             row["Last 5 games average minutes"] = st.mean(minute_stats[-5:])
-            print(player_team)
             self.team_Scraper.find_team_record(player_team)
             team_record = self.team_Scraper.return_cache_value(player_team)
             row["Team Win Percentage"] = self.calculate_win_percentage(team_record)
@@ -163,7 +191,6 @@ class PlayerPerformanceAnalyzer:
             )
 
             opposing_team = self.get_opposing_team_code(row["Teams"], player_team)
-            print(f"opposing_team: {opposing_team}")
             self.team_Scraper.find_team_record(opposing_team)
             opposing_team_record = self.team_Scraper.return_cache_value(opposing_team)
             row["Opponents Team Win Percentage"] = self.calculate_win_percentage(
