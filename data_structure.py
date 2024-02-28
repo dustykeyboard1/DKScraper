@@ -20,7 +20,7 @@ nba_teams = {
     "CLE Cavaliers": "CLE",
     "DAL Mavericks": "DAL",
     "DEN Nuggets": "DEN",
-    "DEWT Pistons": "DET",
+    "DET Pistons": "DET",
     "GS Warriors": "GSW",
     "HOU Rockets": "HOU",
     "IND Pacers": "IND",
@@ -31,7 +31,7 @@ nba_teams = {
     "MIL Bucks": "MIL",
     "MIN Timberwolves": "MIN",
     "NO Pelicans": "NOP",
-    "NK Knicks": "NYK",
+    "NY Knicks": "NYK",
     "OKC Thunder": "OKC",
     "ORL Magic": "ORL",
     "PHI 76ers": "PHI",
@@ -69,6 +69,9 @@ class PlayerPerformanceAnalyzer:
             df["Opponents Team Win Percentage"] = 0.0
             df["Opponents Last 10 Games Win Percentage"] = 0.0
             df["Opponents Last 5 Games Win Percentage"] = 0.0
+            df["Combined Average Season"] = 0.0
+            df["Combined Average Last 10"] = 0.0
+            df["Combined Average Last 5"] = 0.0
 
     def gather_relevant_stats(self, stat_type, game_stats):
         if stat_type == "PRA":
@@ -101,6 +104,9 @@ class PlayerPerformanceAnalyzer:
 
     def calculate_win_percentage(self, result_list):
         return sum(result_list) / len(result_list)
+
+    def calculate_average(self, game_stats):
+        return st.mean(sum(stats) for stats in game_stats)
 
     def add_new_columns(self, row, stat_type):
         # Assuming stats_scraper is an instance of a class that has the necessary methods
@@ -161,14 +167,20 @@ class PlayerPerformanceAnalyzer:
             self.team_Scraper.find_team_record(opposing_team)
             opposing_team_record = self.team_Scraper.return_cache_value(opposing_team)
             row["Opponents Team Win Percentage"] = self.calculate_win_percentage(
-                team_record
+                opposing_team_record
             )
             row["Opponents Last 10 Games Win Percentage"] = (
-                self.calculate_win_percentage(team_record[-10:])
+                self.calculate_win_percentage(opposing_team_record[-10:])
             )
             row["Opponents Last 5 Games Win Percentage"] = (
-                self.calculate_win_percentage(team_record[-5:])
+                self.calculate_win_percentage(opposing_team_record[-5:])
             )
+
+            row["Combined Average Season"] = self.calculate_average(relevant_stats)
+            row["Combined Average Last 10"] = self.calculate_average(
+                relevant_stats[-10:]
+            )
+            row["Combined Average Last 5"] = self.calculate_average(relevant_stats[-5:])
 
             return row
         except Exception as e:
@@ -179,11 +191,13 @@ class PlayerPerformanceAnalyzer:
     def enrich_with_coverage(self):
         for stat_type, df in self.df.items():
             print(f"Processing {stat_type}.")
-            # Limit the operation to the first 5 rows for easier testing and demonstration
-            # Ensure to reassign the processed DataFrame slice back to the original DataFrame
-            self.df[stat_type].iloc[:5] = df.iloc[:5].progress_apply(
+            # Get the actual index values of the first 5 rows to ensure accurate location
+            indices = df.index[:5]
+            # Use loc to reassign the processed DataFrame slice back to the original DataFrame accurately
+            processed_slice = df.loc[indices].progress_apply(
                 lambda row: self.add_new_columns(row, stat_type), axis=1
             )
+            self.df[stat_type].loc[indices] = processed_slice
 
     def calculate_coverage(self, ou, game_stats, multiple):
 
@@ -212,12 +226,17 @@ class PlayerPerformanceAnalyzer:
     def return_dataframe(self):
         return self.df
 
-    def write_dataframe(self):
-        with pd.ExcelWriter(
-            "DataFrames/testoutput.xlsx", engine="xlsxwriter"
-        ) as writer:
-            for stat_type, df in self.df.items():
-                df.to_excel(writer, sheet_name=stat_type)
+    def write_dataframe(self, dict=None, path=None):
+        if dict is None and path is None:
+            with pd.ExcelWriter(
+                "DataFrames/testoutput.xlsx", engine="xlsxwriter"
+            ) as writer:
+                for stat_type, df in self.df.items():
+                    df.to_excel(writer, sheet_name=stat_type)
+        else:
+            with pd.ExcelWriter(path, engine="xlsxwriter") as writer:
+                for stat_type, df in dict.items():
+                    df.to_excel(writer, sheet_name=stat_type)
 
 
 # # Example usage:
