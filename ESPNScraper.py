@@ -91,7 +91,6 @@ class EspnScraper:
         for index, value in enumerate(["PG", "SG", "SF", "PF", "C"]):
 
             if value == pos:
-
                 return f"/html/body/div[1]/div[4]/div/div/div/div[4]/div[1]/ul/li[{str(index + 2)}]"
 
     def return_time_xpath(self, time):
@@ -133,8 +132,11 @@ class EspnScraper:
 
             wait = WebDriverWait(browser, 10)
 
-            xpath = self.return_position_xpath(position)
-            position_element = wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+            # xpath = self.return_position_xpath(position)
+            element_xpath = f"//li[@data-pos='{position}']"
+            position_element = wait.until(
+                EC.element_to_be_clickable((By.XPATH, element_xpath))
+            )
             position_element.click()
 
             table_xpath = "/html/body/div[1]/div[4]/div/div/div/div[6]/table"

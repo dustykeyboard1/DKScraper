@@ -72,6 +72,9 @@ class PlayerPerformanceAnalyzer:
             df["Combined Average Season"] = 0.0
             df["Combined Average Last 10"] = 0.0
             df["Combined Average Last 5"] = 0.0
+            df["Season Opponent Stats vs Position"] = 0.0
+            df["Last 15 Opponent Stats vs Position"] = 0.0
+            df["Last 7 Opponent Stats vs Position"] = 0.0
 
     def gather_relevant_stats(self, stat_type, game_stats):
         if stat_type == "PRA":
@@ -108,8 +111,6 @@ class PlayerPerformanceAnalyzer:
         return st.mean(sum(stats) for stats in game_stats)
 
     def calculate_opponents(self, pos, stat_type, team):
-        self.team_Scraper.find_position_opponent_stats(pos)
-        data_dict = self.team_Scraper.return_defensive_cache(pos)
         return_list = {}
 
         # Define which columns to sum based on the stat_type
@@ -121,20 +122,32 @@ class PlayerPerformanceAnalyzer:
             "PR": ["PTS", "REB"],
             "PA": ["PTS", "AST"],
         }
+        stats_to_sum = stats_columns.get(stat_type, None)
+        if stats_to_sum == None or pos == "Unknown":
+            return [0, 0, 0]
+
+        print(pos)
+        self.team_Scraper.find_position_opponent_stats(pos)
+        data_dict = self.team_Scraper.return_defensive_cache(pos)
         for period, df in data_dict.items():
+            # Convert the columns to numeric, errors='coerce' will set non-convertible values to NaN
+            for stat in stats_to_sum:
+                df[stat] = pd.to_numeric(df[stat], errors="coerce")
+
             # Find the row for the specified team
-            team_row = df[df["TEAM"].str.contains(team)]
+            team_row = df[df["TEAM"].str.contains(team, case=False, regex=False)]
 
             # If the team is not found, continue to the next period
             if team_row.empty:
                 continue
 
             # Sum the specified stats for the team
-            stats_sum = team_row[stats_to_sum].sum(axis=1).values[0]
+            stats_sum = team_row[stats_to_sum].sum(axis=1).iloc[0]
 
             # Add the sum to the return_list under the period key
             return_list[period] = stats_sum
 
+        print(return_list)
         return return_list
 
     def add_new_columns(self, row, stat_type):
@@ -209,6 +222,12 @@ class PlayerPerformanceAnalyzer:
             )
             row["Combined Average Last 5"] = self.calculate_average(relevant_stats[-5:])
 
+            opponent_pos_stats = self.calculate_opponents(
+                player_position, stat_type, opposing_team
+            )
+            row["Season Opponent Stats vs Position"] = opponent_pos_stats["Season"]
+            row["Last 15 Opponent Stats vs Position"] = opponent_pos_stats["Last15"]
+            row["Last 7 Opponent Stats vs Position"] = opponent_pos_stats["Last7"]
             return row
         except Exception as e:
             print(f"Error Processing {player_name}.")
