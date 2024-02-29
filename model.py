@@ -50,7 +50,7 @@ class StatTypeModel:
 
         for stat_type, df in self.dataframes.items():
             # Remove rows where Player Name is N/A
-            df_filtered = df[df["Player Name"] != "N/A"].copy()
+            df_filtered = df[df[f"Last Night {stat_type}"] != 0].copy()
             # Safely add the "Target" column without triggering the warning
             df_filtered.loc[:, "Target"] = df_filtered[f"Last Night {stat_type}"]
             combined_df = pd.concat(

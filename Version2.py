@@ -90,8 +90,8 @@ def main():
 
     # yesterdays_data = load_DKFrame("DataFrames/testoutput.xlsx")
     # update_data(yesterdays_data)
-    # updated_yest_data = load_DKFrame("DataFrames/FinishedOutput.xlsx")
-    # model = update_model(updated_yest_data)
+    updated_yest_data = load_DKFrame("DataFrames/FinishedOutput.xlsx")
+    model = update_model(updated_yest_data)
 
     # Step 1: Fetch Daily Data
     # daily_data = fetch_daily_data()
@@ -104,7 +104,7 @@ def main():
     # updated_stats = load_DKFrame("DataFrames/FinishedOutput.xlsx")
     # model = update_model(updated_stats)
 
-    model = StatTypeModel()
+    # model = StatTypeModel()
 
     processed_data = load_DKFrame("DataFrames/testoutput.xlsx")
     make_predictions(model, "Models/model1.joblib", processed_data)
