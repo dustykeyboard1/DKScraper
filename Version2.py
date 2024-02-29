@@ -9,6 +9,8 @@ from sklearn.metrics import mean_squared_error
 import joblib
 from DKbetscraper import DraftKingsScraper
 from data_structure import PlayerPerformanceAnalyzer
+from LastNightStats import BasketballStatsProcessor
+from model import StatTypeModel
 
 
 def fetch_daily_data():
@@ -27,6 +29,7 @@ def process_data(odds_df):
     """
     PPA = PlayerPerformanceAnalyzer(odds_df)
     # PPA.write_dataframe(odds_df, "Dataframes/DKFrame.xlsx")
+    # PPA.write_dataframe()
     PPA.fetch_player_yearly_data()
     PPA.enrich_with_coverage()
     PPA.write_dataframe()
@@ -49,12 +52,17 @@ def evaluate_predictions(predictions, actual_outcomes):
     pass
 
 
-def update_model(data, targets):
-    """
-    Retrain or tune the model based on new data and outcomes.
-    """
+def update_model(data, targets=None):
+    model_trainer = StatTypeModel()
+    model_trainer.train_model(data)
+    model_trainer.save_model()
+
     # Implement model updating logic here
-    pass
+    return model_trainer
+
+
+def make_predictions(model_object, model_path, todays_data):
+    model_object.predict_model(model_path, todays_data)
 
 
 def save_predictions(predictions):
@@ -63,6 +71,11 @@ def save_predictions(predictions):
     """
     # Implement save logic here
     pass
+
+
+def update_data(dict_to_add):
+    updater = BasketballStatsProcessor(dict_to_add)
+    updater.update_data_frames()
 
 
 def load_DKFrame(path):
@@ -78,7 +91,13 @@ def main():
     daily_data = fetch_daily_data()
     # daily_data = load_DKFrame("Dataframes/DKFrame.xlsx")
     # Step 2: Process Data
-    processed_data = process_data(daily_data)
+    process_data(daily_data)
+    processed_data = load_DKFrame("DataFrames/testoutput.xlsx")
+
+    # updated_stats = update_data(processed_data)
+    updated_stats = load_DKFrame("DataFrames/FinishedOutput.xlsx")
+    model = update_model(updated_stats)
+    make_predictions(model, "Models/model1.joblib", processed_data)
 
     # # Step 3: Load Existing Model or Initialize New One
     # try:

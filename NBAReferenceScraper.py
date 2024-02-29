@@ -18,6 +18,7 @@ position_mapping = {
 class PlayerStatsScraper:
     def __init__(self):
         self.player_stats_cache = {}
+        self.player_last_night_cache = {}
 
     def generate_player_url(self, player_name):
         search_url = f"https://www.basketball-reference.com/search/search.fcgi?search={player_name.replace(' ', '+')}"
@@ -137,6 +138,29 @@ class PlayerStatsScraper:
                 print(f"Failed to fetch data for {player_name}")
                 self.player_stats_cache[player_name] = []
 
+    def get_most_recent_game_stats(self, player_name):
+        if player_name not in self.player_last_night_cache:
+            url = self.generate_player_url(player_name)
+            time.sleep(7)
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, "html.parser")
+                game_log_table = soup.find("table", id="pgl_basic")
+                last_game_row = game_log_table.find_all(
+                    "tr", class_=lambda x: x != "thead"
+                )[-1]
+                points = last_game_row.find("td", {"data-stat": "pts"}).text
+                rebounds = last_game_row.find("td", {"data-stat": "trb"}).text
+                assists = last_game_row.find("td", {"data-stat": "ast"}).text
+                self.player_last_night_cache[player_name] = [
+                    float(points),
+                    float(rebounds),
+                    float(assists),
+                ]
+
+    def return_last_night_cache(self, player):
+        return self.player_last_night_cache[player]
+
     def return_Cache_value(self, Player):
         return self.player_stats_cache[Player]
 
@@ -144,7 +168,7 @@ class PlayerStatsScraper:
 
 
 # Example usage:
-# scraper = PlayerStatsScraper()
+scraper = PlayerStatsScraper()
 # name = "Jalen Green"
 # scraper.fetch_player_stats(name)
 # stats = scraper.return_Cache_value(name)
@@ -154,3 +178,7 @@ class PlayerStatsScraper:
 # print(stats[1])
 # print()
 # print(stats[2])
+player_name = "LeBron James"
+most_recent_game_stats = scraper.get_most_recent_game_stats(player_name)
+if most_recent_game_stats:
+    print(f"Most recent game stats for {player_name}: {most_recent_game_stats}")
