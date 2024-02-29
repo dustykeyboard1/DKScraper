@@ -29,7 +29,7 @@ features = [
 
 
 class StatTypeModel:
-    def __init__(self, dataframes):
+    def __init__(self):
         """
         Initialize the model with a dictionary of dataframes.
         Each key in the dictionary is a stat type, and the value is the dataframe for that stat type.
@@ -87,8 +87,8 @@ class StatTypeModel:
         print(f"Model saved to {filename}")
 
     def predict_model(self, model_path, todays_data):
-        model = load(model)
-        with pd.ExcelWriter("Predictions_for_today.xlsx") as writer:
+        model = load(model_path)
+        with pd.ExcelWriter("DataFrames/Predictions_for_today.xlsx") as writer:
             for stat_type, df in todays_data.items():
                 # Assuming features are defined and include the necessary columns for prediction
                 X_today = df[
