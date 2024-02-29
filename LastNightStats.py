@@ -24,8 +24,10 @@ class BasketballStatsProcessor:
         return self.scraper.return_last_night_cache(player_name)
 
     def update_data_frames(self):
+        # Map from stat names to their indices in the last_night_stats list
+        stat_to_index = {"PTS": 0, "REB": 1, "AST": 2}
+
         for stat_type, df in self.data_frames.items():
-            # Define the new column name based on the stat type
             print(f"Processing {stat_type}...")
             new_column_name = f"Last Night {stat_type}"
 
@@ -37,20 +39,18 @@ class BasketballStatsProcessor:
             ):
                 player_name = row["Player Name"]
                 try:
-
                     # Get the most recent game stats
                     last_night_stats = self.get_most_recent_game_stats(player_name)
 
-                    # Calculate the sum based on the stat type
                     if last_night_stats:
-                        # Only sum the relevant stats for the current stat type
-                        relevant_stats = [
-                            last_night_stats[self.stat_types[stat_type].index(stat)]
+                        # Calculate the sum of relevant stats for the current stat type
+                        relevant_stats_sum = sum(
+                            last_night_stats[stat_to_index[stat]]
                             for stat in self.stat_types[stat_type]
-                        ]
-                        df.at[index, new_column_name] = sum(relevant_stats)
+                        )
+                        df.at[index, new_column_name] = relevant_stats_sum
                 except Exception as e:
-                    print(f"Error Processing {player_name}")
+                    print(f"Error Processing {player_name}: {e}")
                     continue
 
         # At this point, all DataFrames have been updated with last night's performance

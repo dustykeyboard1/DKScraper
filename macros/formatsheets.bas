@@ -16,7 +16,7 @@ Sub AutoFitAndSortSheets()
                 With .Sort
                     .SortFields.Clear
                     .SortFields.Add Key:=Range("F1:F" & lastRow), _
-                        SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+                        SortOn:=xlSortOnValues, Order:=xlDescending, DataOption:=xlSortNormal
                     .SetRange Range("A1:Z" & lastRow) ' Adjust the range "A1:Z" as per your data range.
                     .Header = xlYes ' Assuming the first row is the header row.
                     .Apply
