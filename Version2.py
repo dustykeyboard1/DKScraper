@@ -33,7 +33,7 @@ def process_data(odds_df):
     PPA.fetch_player_yearly_data()
     PPA.enrich_with_coverage()
     PPA.write_dataframe()
-    pass
+    # return PPA
 
 
 def generate_predictions(model, data):
@@ -87,16 +87,23 @@ def main():
     """
     Main function to orchestrate the daily data collection, prediction, and adjustment process.
     """
+
+    # yesterdays_data = load_DKFrame("DataFrames/testoutput.xlsx")
+    # update_data(yesterdays_data)
+    updated_yest_data = load_DKFrame("DataFrames/FinishedOutput.xlsx")
+    model = update_model(yesterdays_data)
+
     # Step 1: Fetch Daily Data
     daily_data = fetch_daily_data()
     # daily_data = load_DKFrame("Dataframes/DKFrame.xlsx")
     # Step 2: Process Data
     process_data(daily_data)
-    processed_data = load_DKFrame("DataFrames/testoutput.xlsx")
+    # yesterdays_data = load_DKFrame("DataFrames/testoutput.xlsx")
 
     # updated_stats = update_data(processed_data)
-    updated_stats = load_DKFrame("DataFrames/FinishedOutput.xlsx")
-    model = update_model(updated_stats)
+    # updated_stats = load_DKFrame("DataFrames/FinishedOutput.xlsx")
+    # model = update_model(updated_stats)
+    processed_data = load_DKFrame("DataFrames/testoutput.xlsx")
     make_predictions(model, "Models/model1.joblib", processed_data)
 
     # # Step 3: Load Existing Model or Initialize New One
