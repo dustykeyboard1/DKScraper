@@ -113,8 +113,9 @@ class PlayerPerformanceAnalyzer:
 
     def calculate_opponents(self, pos, stat_type, team):
         if team in crossovers:
-            team = crossovers[team]
 
+            scared = crossovers[team]
+            team = scared
         return_list = {}
 
         # Define which columns to sum based on the stat_type

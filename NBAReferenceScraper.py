@@ -144,13 +144,13 @@ class PlayerStatsScraper:
 
 
 # Example usage:
-scraper = PlayerStatsScraper()
-name = "Jalen Green"
-scraper.fetch_player_stats(name)
-stats = scraper.return_Cache_value(name)
-# Implement DataFrame creation and analysis methods as needed
-print(stats[0])
-print()
-print(stats[1])
-print()
-print(stats[2])
+# scraper = PlayerStatsScraper()
+# name = "Jalen Green"
+# scraper.fetch_player_stats(name)
+# stats = scraper.return_Cache_value(name)
+# # Implement DataFrame creation and analysis methods as needed
+# print(stats[0])
+# print()
+# print(stats[1])
+# print()
+# print(stats[2])
