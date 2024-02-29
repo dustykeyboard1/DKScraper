@@ -8,6 +8,10 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+
+options = Options()
+options.add_argument("--ignore-certificate-errors")
 
 
 class EspnScraper:
@@ -125,7 +129,7 @@ class EspnScraper:
 
     def find_position_opponent_stats(self, position):
         if position not in self.position_stats:
-            browser = webdriver.Chrome()
+            browser = webdriver.Chrome(options=options)
             browser.get(
                 "https://www.fantasypros.com/daily-fantasy/nba/fanduel-defense-vs-position.php"
             )

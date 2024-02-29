@@ -10,14 +10,12 @@ import joblib
 from DKbetscraper import DraftKingsScraper
 from data_structure import PlayerPerformanceAnalyzer
 
-DKS = DraftKingsScraper()
-
 
 def fetch_daily_data():
     """
     Scrape daily NBA player prop odds, player statistics, and team defensive ratings.
     """
-
+    DKS = DraftKingsScraper()
     odds_data = DKS.scrape_odds()
     odds_info = DKS.create_data_table(odds_data)
     return odds_info
@@ -28,7 +26,7 @@ def process_data(odds_df):
     Process scraped data into a structured format for analysis.
     """
     PPA = PlayerPerformanceAnalyzer(odds_df)
-    PPA.write_dataframe(odds_df, "DataFrames/DKFrame.xlsx")
+    # PPA.write_dataframe(odds_df, "Dataframes/DKFrame.xlsx")
     PPA.fetch_player_yearly_data()
     PPA.enrich_with_coverage()
     PPA.write_dataframe()
@@ -77,8 +75,8 @@ def main():
     Main function to orchestrate the daily data collection, prediction, and adjustment process.
     """
     # Step 1: Fetch Daily Data
-    # daily_data = fetch_daily_data()
-    daily_data = load_DKFrame("Dataframes/DKFrame.xlsx")
+    daily_data = fetch_daily_data()
+    # daily_data = load_DKFrame("Dataframes/DKFrame.xlsx")
     # Step 2: Process Data
     processed_data = process_data(daily_data)
 

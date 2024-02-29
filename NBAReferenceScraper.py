@@ -101,23 +101,31 @@ class PlayerStatsScraper:
                     if soup.findAll("td", {"data-stat": "team_id"})
                     else "Free Agent"
                 )
-                # Extract position text
+                position_strong_tag = soup.find(
+                    "strong", text=lambda t: t and "Position:" in t
+                )
+
+                # If the <strong> tag is found, get its following sibling
                 position_text = (
-                    soup.select_one(
-                        "p:-soup-contains('Position') > strong"
-                    ).next_sibling
-                    if soup.select_one("p:-soup-contains('Position')")
+                    position_strong_tag.next_sibling.strip()
+                    if position_strong_tag
                     else "Unknown"
                 )
-
+                # print(position_text)
                 # Clean up the position text to get just the primary position
-                primary_position = (
-                    position_text.split("\n")[1].strip().split("and")[0].strip()
-                    if position_text != "Unknown"
-                    else "Unknown"
-                )
 
-                # Map the primary position to its abbreviation
+                # First, replace 'and' with a comma for uniformity if it exists
+                position_text = position_text.replace(" and", ",")
+
+                # Now split by comma and strip spaces to get the list of positions
+                position_text = position_text.replace(" and", ",")
+
+                # Then we split by comma, take the first element, and strip any excess whitespace or symbols
+                primary_position = position_text.split(",")[0].split("\n")[0].strip()
+
+                # print(primary_position)
+                # If position_text contains multiple positions, split and get the first one, otherwise, it's already the primary position
+                # primary_position = position_text.split(",")[0].strip()
                 player_position = position_mapping.get(primary_position, "Unknown")
                 self.player_stats_cache[player_name] = [
                     game_stats,
@@ -136,12 +144,13 @@ class PlayerStatsScraper:
 
 
 # Example usage:
-# scraper = PlayerStatsScraper()
-# scraper.fetch_player_stats("Caleb Martin")
-# stats = scraper.return_Cache_value("Caleb Martin")
-# # Implement DataFrame creation and analysis methods as needed
-# print(stats[0])
-# print()
-# print(stats[1])
-# print()
-# print(stats[2])
+scraper = PlayerStatsScraper()
+name = "Jalen Green"
+scraper.fetch_player_stats(name)
+stats = scraper.return_Cache_value(name)
+# Implement DataFrame creation and analysis methods as needed
+print(stats[0])
+print()
+print(stats[1])
+print()
+print(stats[2])

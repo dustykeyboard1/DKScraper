@@ -11,10 +11,11 @@ from ESPNScraper import EspnScraper
 
 tqdm.pandas()
 
+crossovers = {"UTA": "UTH", "CHO": "CHA", "BKN": "BKR", "NOR": "NOP"}
 nba_teams = {
     "ATL Hawks": "ATL",
     "BOS Celtics": "BOS",
-    "BKN Nets": "BKN",
+    "BKN Nets": "BRK",
     "CHA Hornets": "CHO",
     "CHI Bulls": "CHI",
     "CLE Cavaliers": "CLE",
@@ -35,7 +36,7 @@ nba_teams = {
     "OKC Thunder": "OKC",
     "ORL Magic": "ORL",
     "PHI 76ers": "PHI",
-    "Phoenix Suns": "PHX",
+    "PHO Suns": "PHO",
     "POR Trail Blazers": "POR",
     "SAC Kings": "SAC",
     "SA Spurs": "SAS",
@@ -111,6 +112,9 @@ class PlayerPerformanceAnalyzer:
         return st.mean(sum(stats) for stats in game_stats)
 
     def calculate_opponents(self, pos, stat_type, team):
+        if team in crossovers:
+            team = crossovers[team]
+
         return_list = {}
 
         # Define which columns to sum based on the stat_type
@@ -124,9 +128,8 @@ class PlayerPerformanceAnalyzer:
         }
         stats_to_sum = stats_columns.get(stat_type, None)
         if stats_to_sum == None or pos == "Unknown":
-            return [0, 0, 0]
+            return {"Season": 0, "Last7": 0, "Last15": 0}
 
-        print(pos)
         self.team_Scraper.find_position_opponent_stats(pos)
         data_dict = self.team_Scraper.return_defensive_cache(pos)
         for period, df in data_dict.items():
@@ -147,7 +150,6 @@ class PlayerPerformanceAnalyzer:
             # Add the sum to the return_list under the period key
             return_list[period] = stats_sum
 
-        print(return_list)
         return return_list
 
     def add_new_columns(self, row, stat_type):
@@ -237,13 +239,10 @@ class PlayerPerformanceAnalyzer:
     def enrich_with_coverage(self):
         for stat_type, df in self.df.items():
             print(f"Processing {stat_type}.")
-            # Get the actual index values of the first 5 rows to ensure accurate location
-            indices = df.index[:5]
-            # Use loc to reassign the processed DataFrame slice back to the original DataFrame accurately
-            processed_slice = df.loc[indices].progress_apply(
+            # Apply the function to all rows in the DataFrame
+            self.df[stat_type] = df.progress_apply(
                 lambda row: self.add_new_columns(row, stat_type), axis=1
             )
-            self.df[stat_type].loc[indices] = processed_slice
 
     def calculate_coverage(self, ou, game_stats, multiple):
 
