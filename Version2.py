@@ -3,6 +3,7 @@ from DKbetscraper import DraftKingsScraper
 from data_structure import PlayerPerformanceAnalyzer
 from LastNightStats import BasketballStatsProcessor
 from model import StatTypeModel
+from sendemail import send_email_with_attachment
 
 
 def fetch_daily_data():
@@ -91,6 +92,8 @@ def main():
     process_data(daily_data)
     todaysdata = load_DKFrame("DataFrames/testoutput.xlsx")
     make_predictions(model, "Models/model1.joblib", todaysdata)
+
+    send_email_with_attachment()
 
     # # Step 3: Load Existing Model or Initialize New One
     # try:
