@@ -1,10 +1,11 @@
 import pandas as pd
+from sklearn.linear_model import SGDRegressor
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 from joblib import dump, load
-
+from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
 
 features = [
     "Combined Average Last 10",
@@ -29,19 +30,37 @@ features = [
 
 
 class StatTypeModel:
-    def __init__(self):
+    def __init__(
+        self,
+        load_existing=True,
+        model_path="Models/model1.joblib",
+        scaler_path="Models/scaler1.joblib",
+        imputer_path="Models/imputer1.joblib",
+    ):
         """
-        Initialize the model with a dictionary of dataframes.
-        Each key in the dictionary is a stat type, and the value is the dataframe for that stat type.
+        Initialize the model. Optionally load an existing model, scaler, and imputer.
         """
-        self.model = None
+        if load_existing:
+            self.model = load(model_path)
+            self.scaler = load(scaler_path)
+            self.imputer = load(imputer_path)
+            print(
+                f"Model, scaler, and imputer loaded from {model_path}, {scaler_path}, and {imputer_path}, respectively."
+            )
+        else:
+            self.model = SGDRegressor(verbose=1, random_state=42)
+            self.scaler = StandardScaler()
+            self.imputer = SimpleImputer(strategy="mean")
+            print("New model, scaler, and imputer initialized.")
 
-    def train_model(self, dataframes):
+    def train_model(self, dataframes, incremental=True):
+        """
+        Train or incrementally train the model on the provided dataframes.
+        """
         self.dataframes = dataframes
-        self._preprocess_and_combine_data()
-        self._train_model()
+        self._preprocess_and_combine_data(incremental=incremental)
 
-    def _preprocess_and_combine_data(self):
+    def _preprocess_and_combine_data(self, incremental):
         """
         Preprocess each dataframe by selecting the relevant features and target,
         and then combine them into a single dataframe.
@@ -49,56 +68,76 @@ class StatTypeModel:
         combined_df = pd.DataFrame()
 
         for stat_type, df in self.dataframes.items():
-            # Remove rows where Player Name is N/A
             df_filtered = df[df[f"Last Night {stat_type}"] != 0].copy()
-            # Safely add the "Target" column without triggering the warning
             df_filtered.loc[:, "Target"] = df_filtered[f"Last Night {stat_type}"]
             combined_df = pd.concat(
                 [combined_df, df_filtered[features + ["Target"]]], ignore_index=True
             )
 
-        self.combined_df = combined_df
+        # Handle missing values and scale features
+        if not incremental:
+            # Fit and transform for initial training
+            X = combined_df[features]
+            self.imputer.fit(X)
+            X_imputed = self.imputer.transform(X)
+            self.scaler.fit(X_imputed)
+            X_scaled = self.scaler.transform(X_imputed)
+        else:
+            # Only transform for incremental training
+            X_imputed = self.imputer.transform(combined_df[features])
+            X_scaled = self.scaler.transform(X_imputed)
 
-    def _train_model(self):
+        y = combined_df["Target"]
+        self._train_model(X_scaled, y, incremental)
+
+    def _train_model(self, X, y, incremental):
         """
-        Train a Random Forest Regressor using the combined dataframe.
+        Train or incrementally train the model using the processed data.
         """
-        X = self.combined_df.drop("Target", axis=1)
-        y = self.combined_df["Target"]
+        if incremental:
+            self.model.partial_fit(X, y)
+        else:
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42
+            )
+            self.model.fit(X_train, y_train)
+            # Evaluate the model with the test set
+            self._evaluate_model(X_test, y_test)
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
-        )
-
-        # Set verbose to 2 for more detailed output
-        self.model = RandomForestRegressor(n_estimators=100, random_state=42, verbose=2)
-        self.model.fit(X_train, y_train)
-
-        # Evaluate the model
+    def _evaluate_model(self, X_test, y_test):
         predictions = self.model.predict(X_test)
         rmse = sqrt(mean_squared_error(y_test, predictions))
         print(f"Root Mean Squared Error: {rmse}")
 
-    def save_model(self, filename="Models/model1.joblib"):
-        """
-        Save the trained model to a file.
-        """
-        dump(self.model, filename)
-        print(f"Model saved to {filename}")
+    def save_model(
+        self,
+        model_filename="Models/model1.joblib",
+        scaler_filename="Models/scaler1.joblib",
+        imputer_filename="Models/imputer1.joblib",
+    ):
+        dump(self.model, model_filename)
+        dump(self.scaler, scaler_filename)
+        dump(self.imputer, imputer_filename)
+        print(f"Model saved to {model_filename}")
+        print(f"Scaler saved to {scaler_filename}")
+        print(f"Imputer saved to {imputer_filename}")
 
+    # Adjust the predict_model method to include imputation and scaling
     def predict_model(self, model_path, todays_data):
-        model = load(model_path)
+        # Load the model, scaler, and imputer if not already loaded
+        model = self.model if self.model else load(model_path)
+        # Assume the scaler and imputer are loaded in __init__ if using an existing model
+
         with pd.ExcelWriter("DataFrames/Predictions_for_today.xlsx") as writer:
             for stat_type, df in todays_data.items():
-                # Assuming features are defined and include the necessary columns for prediction
-                X_today = df[
-                    features
-                ]  # Ensure this doesn't include 'O/U' since it's not a feature but a label
+                # Preprocess features: Impute NaNs and scale
+                X_today = df[features]
+                X_today_imputed = self.imputer.transform(X_today)
+                X_today_scaled = self.scaler.transform(X_today_imputed)
 
-                # Make predictions
-                df["Prediction"] = model.predict(X_today)
+                # Make predictions with preprocessed data
+                df["Prediction"] = model.predict(X_today_scaled)
 
-                # Calculate prediction - O/U and its absolute value
                 df["Pred_minus_OU"] = df["Prediction"] - df["O/U"]
                 df["Abs_Pred_minus_OU"] = abs(df["Pred_minus_OU"])
 
@@ -113,8 +152,6 @@ class StatTypeModel:
                         "Abs_Pred_minus_OU",
                     ]
                 ]
-
-                # Save to the respective sheet in the Excel file
                 df_to_save.to_excel(writer, sheet_name=stat_type, index=False)
 
         print("Predictions saved in 'Predictions_for_today.xlsx'")

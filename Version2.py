@@ -1,12 +1,4 @@
-import requests
-from bs4 import BeautifulSoup
 import pandas as pd
-from datetime import datetime, timedelta
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error
-import joblib
 from DKbetscraper import DraftKingsScraper
 from data_structure import PlayerPerformanceAnalyzer
 from LastNightStats import BasketballStatsProcessor
@@ -52,10 +44,9 @@ def evaluate_predictions(predictions, actual_outcomes):
     pass
 
 
-def update_model(data, targets=None):
+def update_model(data, retrain=False):
     model_trainer = StatTypeModel()
     model_trainer.train_model(data)
-    model_trainer.save_model()
 
     # Implement model updating logic here
     return model_trainer
@@ -88,29 +79,18 @@ def main():
     Main function to orchestrate the daily data collection, prediction, and adjustment process.
     """
 
-    # yesterdays_data = load_DKFrame("DataFrames/testoutput.xlsx")
-    # update_data(yesterdays_data)
-    # updated_yest_data = load_DKFrame("DataFrames/FinishedOutput.xlsx")
-    # model = update_model(updated_yest_data)
-
-    # Step 1: Fetch Daily Data
-    # daily_data = fetch_daily_data()
-    # daily_data = load_DKFrame("Dataframes/DKFrame.xlsx")
-    # Step 2: Process Data
-    # process_data(daily_data)
-    yesterdays_data = load_DKFrame("DataFrames/testoutput2.xlsx")
+    yesterdays_data = load_DKFrame("DataFrames/testoutput.xlsx")
     update_data(yesterdays_data)
     updated_yest_data = load_DKFrame("DataFrames/FinishedOutput.xlsx")
-    model = update_model(updated_yest_data)
+    model = update_model(updated_yest_data, retrain=True)
 
-    # updated_stats = update_data(yesterdays_data)
-    # updated_stats = load_DKFrame("DataFrames/FinishedOutput.xlsx")
-    # model = update_model(updated_stats)
-
-    # model = StatTypeModel()
-
-    processed_data = load_DKFrame("DataFrames/testoutput.xlsx")
-    make_predictions(model, "Models/model1.joblib", processed_data)
+    # Step 1: Fetch Daily Data
+    daily_data = fetch_daily_data()
+    # daily_data = load_DKFrame("Dataframes/DKFrame.xlsx")
+    # Step 2: Process Data
+    process_data(daily_data)
+    todaysdata = load_DKFrame("DataFrames/testoutput.xlsx")
+    make_predictions(model, "Models/model1.joblib", todaysdata)
 
     # # Step 3: Load Existing Model or Initialize New One
     # try:
