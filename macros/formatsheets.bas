@@ -8,14 +8,14 @@ Sub AutoFitAndSortSheets()
         With ws
             .Cells.EntireColumn.AutoFit ' Auto fit all columns.
             
-            lastRow = .Cells(.Rows.Count, "F").End(xlUp).Row ' Find the last row with data in column F.
+            lastRow = .Cells(.Rows.Count, "E").End(xlUp).Row ' Find the last row with data in column F.
             
             ' Check if there is more than one row of data to sort.
             If lastRow > 1 Then
                 ' Sort the data based on column F values.
                 With .Sort
                     .SortFields.Clear
-                    .SortFields.Add Key:=Range("F1:F" & lastRow), _
+                    .SortFields.Add Key:=Range("E1:E" & lastRow), _
                         SortOn:=xlSortOnValues, Order:=xlDescending, DataOption:=xlSortNormal
                     .SetRange Range("A1:Z" & lastRow) ' Adjust the range "A1:Z" as per your data range.
                     .Header = xlYes ' Assuming the first row is the header row.
