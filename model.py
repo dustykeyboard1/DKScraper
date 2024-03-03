@@ -10,6 +10,7 @@ from sklearn.metrics import log_loss
 from joblib import dump, load
 
 features = [
+    "O/U",
     "Combined Average Last 10",
     "Combined Average Last 5",
     "Combined Average Season",
@@ -90,17 +91,9 @@ class StatTypeModel:
             transformer = self.model.named_steps["preprocessor"]
             X_transformed = transformer.transform(X)
             classifier = self.model.named_steps["classifier"]
-            classifier.partial_fit(X_transformed, y, classes=np.unique(y))
-
-    def _train_model(self, X, y, incremental):
-        if incremental:
-            self.model.partial_fit(X, y, classes=np.unique(y))
-        else:
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=0.2, random_state=42
-            )
-            self.model.fit(X_train, y_train)
-            self._evaluate_model(X_test, y_test)
+            epochs = 3
+            for _ in range(epochs):
+                classifier.partial_fit(X_transformed, y, classes=np.unique(y))
 
     def _evaluate_model(self, X_test, y_test):
         # For classification, using log loss as evaluation metric

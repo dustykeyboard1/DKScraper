@@ -90,6 +90,7 @@ def main():
     # daily_data = load_DKFrame("Dataframes/DKFrame.xlsx")
     # Step 2: Process Data
     process_data(daily_data)
+    # model = StatTypeModel(load_existing=True)
     todaysdata = load_DKFrame("DataFrames/testoutput.xlsx")
     make_predictions(model, "Models/model1.joblib", todaysdata)
 
