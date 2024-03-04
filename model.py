@@ -34,66 +34,66 @@ features = [
 
 class StatTypeModel:
 
-    def __init__(self, load_existing=False, model_path="Models/model1.joblib"):
-        if load_existing:
-            self.model = load(model_path)
-            print(f"Model loaded from {model_path}.")
-        else:
-            # Define preprocessing pipeline
-            preprocessor = ColumnTransformer(
-                transformers=[
-                    ("num", SimpleImputer(strategy="mean"), features),
-                ],
-                remainder="passthrough",  # Keep other features unchanged
-            )
+    def __init__(self):
+        # Define preprocessing pipeline
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ("num", SimpleImputer(strategy="mean"), features),
+            ],
+            remainder="passthrough",  # Keep other features unchanged
+        )
 
-            # Define the complete pipeline
-            self.model = Pipeline(
-                steps=[
-                    ("preprocessor", preprocessor),
-                    ("scaler", StandardScaler()),
-                    (
-                        "classifier",
-                        SGDClassifier(loss="log_loss", random_state=42, verbose=1),
-                    ),
-                ]
-            )
-            print("New model pipeline initialized.")
+        # Define the complete pipeline
+        self.model = Pipeline(
+            steps=[
+                ("preprocessor", preprocessor),
+                ("scaler", StandardScaler()),
+                (
+                    "classifier",
+                    SGDClassifier(loss="log_loss", random_state=42, verbose=1),
+                ),
+            ]
+        )
+        print("New model pipeline initialized.")
 
-    def train_model(self, data, target_column, incremental=False):
+    def load_existing_data(self):
+        """
+        Load existing data from an Excel file.
+        """
+        try:
+            return pd.read_excel(self.excel_path)
+        except FileNotFoundError:
+            print(
+                f"No existing data file found at {self.excel_path}. Starting with an empty DataFrame."
+            )
+            return pd.DataFrame()
+
+    def train_model(self, data, target_column):
+        self.excel_path = "DataFrames/old_data.xlsx"
         self.dataframes = data
-        self._preprocess_and_combine_data(target_column, incremental)
+        self._preprocess_and_combine_data(target_column)
         self.save_model()
 
-    def _preprocess_and_combine_data(self, target_column, incremental):
+    def _preprocess_and_combine_data(self, target_column):
         combined_df = pd.DataFrame()
-
+        old_data = self.load_existing_data()
         for stat_type, df in self.dataframes.items():
             df_filtered = df[
-                df[target_column] != "NAN"
+                (df[target_column] != "NAN") & df["O/U"].notna()
             ].copy()  # Ensure this line correctly filters out unwanted rows
             combined_df = pd.concat(
                 [combined_df, df_filtered[features + [target_column]]],
                 ignore_index=True,
             )
+        old_data = pd.concat([old_data, combined_df], ignore_index=True)
+        old_data.to_excel("DataFrames/old_data.xlsx")
 
-        X = combined_df[features]
-        y = combined_df[target_column].astype(
+        X = old_data[features]
+        y = old_data[target_column].astype(
             int
         )  # Ensure y is of integer type for classification
 
-        if not incremental:
-            # For initial training, fit the entire pipeline
-            self.model.fit(X, y)
-        else:
-            # For incremental learning, apply transformations manually, then partial_fit on the classifier
-            # This assumes the last step of your pipeline is the classifier
-            transformer = self.model.named_steps["preprocessor"]
-            X_transformed = transformer.transform(X)
-            classifier = self.model.named_steps["classifier"]
-            epochs = 3
-            for _ in range(epochs):
-                classifier.partial_fit(X_transformed, y, classes=np.unique(y))
+        self.model.fit(X, y)
 
     def _evaluate_model(self, X_test, y_test):
         # For classification, using log loss as evaluation metric

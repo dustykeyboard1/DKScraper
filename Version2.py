@@ -5,6 +5,8 @@ from LastNightStats import BasketballStatsProcessor
 from model import StatTypeModel
 from sendemail import send_email_with_attachment
 
+model = StatTypeModel()
+
 
 def fetch_daily_data():
     """
@@ -45,16 +47,9 @@ def evaluate_predictions(predictions, actual_outcomes):
     pass
 
 
-def update_model(data, retrain=True):
-    model_trainer = StatTypeModel(load_existing=retrain)
-    model_trainer.train_model(data, target_column="Covered", incremental=retrain)
-
-    # Implement model updating logic here
-    return model_trainer
-
-
-def make_predictions(model_object, model_path, todays_data):
-    model_object.predict_model(model_path, todays_data)
+def make_predictions(model_path, old_data, todays_data):
+    model.train_model(old_data, target_column="Covered")
+    model.predict_model(model_path, todays_data)
 
 
 def save_predictions(predictions):
@@ -80,19 +75,18 @@ def main():
     Main function to orchestrate the daily data collection, prediction, and adjustment process.
     """
 
-    yesterdays_data = load_DKFrame("DataFrames/testoutput.xlsx")
-    update_data(yesterdays_data)
+    # yesterdays_data = load_DKFrame("DataFrames/testoutput.xlsx")
+    # update_data(yesterdays_data)
     updated_yest_data = load_DKFrame("DataFrames/FinishedOutput.xlsx")
-    model = update_model(updated_yest_data, retrain=True)
+    # model = update_model(updated_yest_data, retrain=True)
 
     # Step 1: Fetch Daily Data
-    daily_data = fetch_daily_data()
+    # daily_data = fetch_daily_data()
     # daily_data = load_DKFrame("Dataframes/DKFrame.xlsx")
     # Step 2: Process Data
-    process_data(daily_data)
-    # model = StatTypeModel(load_existing=True)
+    # process_data(daily_data)
     todaysdata = load_DKFrame("DataFrames/testoutput.xlsx")
-    make_predictions(model, "Models/model1.joblib", todaysdata)
+    make_predictions("Models/model1.joblib", updated_yest_data, todaysdata)
 
     # send_email_with_attachment()
 

@@ -168,7 +168,7 @@ class PlayerStatsScraper:
 
 
 # Example usage:
-scraper = PlayerStatsScraper()
+# scraper = PlayerStatsScraper()
 # name = "Jalen Green"
 # scraper.fetch_player_stats(name)
 # stats = scraper.return_Cache_value(name)
@@ -178,7 +178,7 @@ scraper = PlayerStatsScraper()
 # print(stats[1])
 # print()
 # print(stats[2])
-player_name = "LeBron James"
-most_recent_game_stats = scraper.get_most_recent_game_stats(player_name)
-if most_recent_game_stats:
-    print(f"Most recent game stats for {player_name}: {most_recent_game_stats}")
+# player_name = "LeBron James"
+# most_recent_game_stats = scraper.get_most_recent_game_stats(player_name)
+# if most_recent_game_stats:
+#     print(f"Most recent game stats for {player_name}: {most_recent_game_stats}")
