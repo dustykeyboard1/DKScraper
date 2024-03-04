@@ -75,16 +75,16 @@ def main():
     Main function to orchestrate the daily data collection, prediction, and adjustment process.
     """
 
-    # yesterdays_data = load_DKFrame("DataFrames/testoutput.xlsx")
-    # update_data(yesterdays_data)
+    yesterdays_data = load_DKFrame("DataFrames/testoutput.xlsx")
+    update_data(yesterdays_data)
     updated_yest_data = load_DKFrame("DataFrames/FinishedOutput.xlsx")
     # model = update_model(updated_yest_data, retrain=True)
 
     # Step 1: Fetch Daily Data
-    # daily_data = fetch_daily_data()
+    daily_data = fetch_daily_data()
     # daily_data = load_DKFrame("Dataframes/DKFrame.xlsx")
     # Step 2: Process Data
-    # process_data(daily_data)
+    process_data(daily_data)
     todaysdata = load_DKFrame("DataFrames/testoutput.xlsx")
     make_predictions("Models/model1.joblib", updated_yest_data, todaysdata)
 
