@@ -4,8 +4,9 @@ from data_structure import PlayerPerformanceAnalyzer
 from LastNightStats import BasketballStatsProcessor
 from model import StatTypeModel
 from sendemail import send_email_with_attachment
+from neuralnet import StatTypeNNModel
 
-model = StatTypeModel()
+model = StatTypeNNModel()
 
 
 def fetch_daily_data():
@@ -47,9 +48,9 @@ def evaluate_predictions(predictions, actual_outcomes):
     pass
 
 
-def make_predictions(model_path, old_data, todays_data):
+def make_predictions(old_data, todays_data):
     model.train_model(old_data, target_column="Covered")
-    model.predict_model(model_path, todays_data)
+    model.predict_model(todays_data)
 
 
 def save_predictions(predictions):
@@ -86,9 +87,11 @@ def main():
     # Step 2: Process Data
     process_data(daily_data)
     todaysdata = load_DKFrame("DataFrames/testoutput.xlsx")
-    make_predictions("Models/model1.joblib", updated_yest_data, todaysdata)
+    make_predictions(updated_yest_data, todaysdata)
 
-    # send_email_with_attachment()
+    send_email_with_attachment()
+
+    #
 
     # # Step 3: Load Existing Model or Initialize New One
     # try:
