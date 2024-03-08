@@ -1,5 +1,6 @@
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, InputLayer
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from tensorflow.keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import log_loss
@@ -36,6 +37,16 @@ features = [
     "Team Win Percentage",
 ]
 
+callbacks = [
+    EarlyStopping(monitor="val_loss", patience=30, verbose=1),
+    ModelCheckpoint(
+        filepath="best_model.h5", monitor="val_loss", save_best_only=True, verbose=1
+    ),
+    ReduceLROnPlateau(
+        monitor="val_loss", factor=0.2, patience=15, min_lr=0.001, verbose=1
+    ),
+]
+
 
 class StatTypeNNModel:
 
@@ -57,6 +68,8 @@ class StatTypeNNModel:
         model = Sequential(
             [
                 InputLayer(input_shape=(input_shape,)),
+                Dense(256, activation="relu"),
+                Dense(128, activation="relu"),
                 Dense(64, activation="relu"),
                 Dense(32, activation="relu"),
                 Dense(1, activation="sigmoid"),  # Sigmoid for binary classification
@@ -78,26 +91,40 @@ class StatTypeNNModel:
 
     def train_model(self, new_data, target_column):
         old_data = self.load_existing_data()
-        combined_df = pd.concat([old_data, new_data], ignore_index=True)
-        combined_df.to_excel(self.excel_path, index=False)
+        combined_df = pd.DataFrame()
+        for stat_type, df in new_data.items():
+            df_filtered = df[df["O/U"].notna()].copy()
+            combined_df = pd.concat(
+                [combined_df, df_filtered[features + [target_column]]],
+                ignore_index=True,
+            )
+        old_data = pd.concat([old_data, combined_df], ignore_index=True)
+        old_data.to_excel(self.excel_path, index=False)
 
-        # Preprocessing
-        preprocessor = ColumnTransformer(
-            transformers=[
-                ("num", SimpleImputer(strategy="mean"), features),
-                ("scaler", StandardScaler(), features),
-            ],
-            remainder="passthrough",
+        X = old_data[features]
+        y = old_data[target_column].astype(int)
+
+        # Splitting the data
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42
         )
 
-        X = combined_df[features]
-        y = combined_df[target_column].astype(int)
+        # Preprocessing: Fit and transform the training data
+        X_train_preprocessed = self.preprocessor.fit_transform(X_train)
+        X_test_preprocessed = self.preprocessor.transform(X_test)
 
-        # Impute missing values and scale features
-        X_preprocessed = preprocessor.fit_transform(X)
-
+        # Initialize the model
+        self.model = self.build_nn_model(X_train_preprocessed.shape[1])
         # Train the model
-        self.model.fit(X_preprocessed, y, epochs=100, batch_size=32, verbose=1)
+        self.model.fit(
+            X_train_preprocessed,
+            y_train,
+            epochs=500,
+            batch_size=32,
+            verbose=1,
+            validation_data=(X_test_preprocessed, y_test),
+            callbacks=callbacks,
+        )
 
         # Save the trained model
         self.model.save(self.model_path)
