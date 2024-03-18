@@ -10,6 +10,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 import pandas as pd
 import numpy as np
+import tensorflow as tf
 from joblib import dump, load
 
 # from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
@@ -169,7 +170,9 @@ class StatTypeNNModel:
         )  # Convert probabilities to 0 or 1 predictions
         return predictions, probabilities
 
-    def predict_model(self, todays_data):
+    def predict_model(self, todays_data, load_model=False):
+        if load_model:
+            self.model = tf.keras.models.load_model("Models/nn_model.h5")
         # Ensure todays_data is structured correctly for preprocessing
         with pd.ExcelWriter("DataFrames/NN_Predictions_for_today.xlsx") as writer:
             for stat_type, df in todays_data.items():

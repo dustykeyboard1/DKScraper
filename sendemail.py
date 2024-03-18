@@ -6,7 +6,7 @@ import mimetypes
 def send_email_with_attachment(
     subject="New SpreadSheet",
     body="Here you go dummy",
-    attachment_path="DataFrames\Predictions_for_today.xlsx",
+    attachment_path="DataFrames/NN_Predictions_for_today.xlsx",
 ):
 
     receiver = "mikesyanks02@icloud.com"
