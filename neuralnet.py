@@ -39,12 +39,21 @@ features = [
 ]
 
 callbacks = [
-    EarlyStopping(monitor="val_loss", patience=30, verbose=1),
+    EarlyStopping(
+        monitor="val_loss",
+        patience=100,  # Increased patience from 30 to 100
+        verbose=1,
+        restore_best_weights=True,  # Add this to restore model weights from the epoch with the best value of the monitored quantity.
+    ),
     ModelCheckpoint(
         filepath="best_model.h5", monitor="val_loss", save_best_only=True, verbose=1
     ),
     ReduceLROnPlateau(
-        monitor="val_loss", factor=0.2, patience=15, min_lr=0.001, verbose=1
+        monitor="val_loss",
+        factor=0.2,
+        patience=50,  # Increased patience from 15 to 50
+        min_lr=0.001,
+        verbose=1,
     ),
 ]
 
@@ -187,7 +196,15 @@ class StatTypeNNModel:
 
                 # Prepare only the relevant columns to be saved
                 df_to_save = df[
-                    ["Teams", "Player Name", "O/U", "Prediction", "Confidence"]
+                    [
+                        "Teams",
+                        "Player Name",
+                        "Odds for Over",
+                        "Odds for Under",
+                        "O/U",
+                        "Prediction",
+                        "Confidence",
+                    ]
                 ]
                 df_to_save.to_excel(writer, sheet_name=stat_type, index=False)
 
