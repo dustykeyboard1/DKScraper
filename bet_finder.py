@@ -76,7 +76,7 @@ def main():
     parlay_budget = daily_budget * 0.3
     straight_bet_budget = daily_budget - parlay_budget
 
-    straight_bets, parlay_candidates = select_straight_and_parlay_bets(all_bets, 5, 3)
+    straight_bets, parlay_candidates = select_straight_and_parlay_bets(all_bets, 5, 4)
     parlay_odds = calculate_parlay_odds(parlay_candidates)
     parlay_return = parlay_budget * (parlay_odds - 1)
 
