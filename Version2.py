@@ -3,6 +3,7 @@ from DKbetscraper import DraftKingsScraper
 from data_structure import PlayerPerformanceAnalyzer
 from LastNightStats import BasketballStatsProcessor
 from model import StatTypeModel
+from emailpicks import main as sendpicks
 from sendemail import send_email_with_attachment
 from neuralnet import StatTypeNNModel
 
@@ -48,6 +49,10 @@ def evaluate_predictions(predictions, actual_outcomes):
     pass
 
 
+def just_predictions(today):
+    model.predict_model(today, load_model=True)
+
+
 def make_predictions(old_data, todays_data):
     model.train_model(old_data, target_column="Covered")
     model.predict_model(todays_data)
@@ -88,6 +93,8 @@ def main():
     process_data(daily_data)
     todaysdata = load_DKFrame("DataFrames/testoutput.xlsx")
     make_predictions(updated_yest_data, todaysdata)
+
+    # just_predictions(todaysdata)
 
     send_email_with_attachment()
 
