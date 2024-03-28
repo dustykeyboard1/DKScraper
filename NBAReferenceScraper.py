@@ -49,7 +49,7 @@ class PlayerStatsScraper:
             if multiple
             else sum(1 for stat in game_stats if stat > ou)
         )
-        percentage_over = games_over / len(game_stats) * 100 if game_stats else -99
+        percentage_over = games_over / len(game_stats) if game_stats else -99
         return percentage_over
 
     def calculate_percentile(self, ou, stats_list, multiple=True):

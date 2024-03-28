@@ -1,7 +1,15 @@
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, InputLayer
+from tensorflow.keras.layers import (
+    Dense,
+    InputLayer,
+    Dropout,
+    ELU,
+    Activation,
+)
+from tensorflow.keras.activations import swish
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers.schedules import PolynomialDecay, ExponentialDecay
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import log_loss
 from sklearn.preprocessing import StandardScaler
@@ -12,6 +20,7 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 from joblib import dump, load
+import matplotlib.pyplot as plt
 
 # from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 
@@ -41,7 +50,7 @@ features = [
 callbacks = [
     EarlyStopping(
         monitor="val_loss",
-        patience=100,  # Increased patience from 30 to 100
+        patience=20,  # Increased patience from 30 to 100
         verbose=1,
         restore_best_weights=True,  # Add this to restore model weights from the epoch with the best value of the monitored quantity.
     ),
@@ -50,12 +59,29 @@ callbacks = [
     ),
     ReduceLROnPlateau(
         monitor="val_loss",
-        factor=0.2,
-        patience=50,  # Increased patience from 15 to 50
-        min_lr=0.001,
+        factor=0.5,
+        patience=25,  # Increased patience from 15 to 50
+        min_lr=0.0001,
         verbose=1,
     ),
 ]
+
+initial_learning_rate = 0.001
+
+# Assuming you have 500 epochs and you want the learning rate to update every epoch
+decay_steps = 100000  # Adjust this based on your dataset size and training behavior
+
+# Let's make the decay a bit more aggressive.
+decay_rate = 0.96  # Now the rate decreases by 10% every decay step
+
+lr_schedule = ExponentialDecay(
+    initial_learning_rate,
+    decay_steps=decay_steps,
+    decay_rate=decay_rate,
+    staircase=True,  # You can set this to False for a smoother decay
+)
+
+optimizer = Adam(learning_rate=lr_schedule)
 
 
 class StatTypeNNModel:
@@ -65,28 +91,39 @@ class StatTypeNNModel:
     ):
         self.excel_path = excel_path
         self.model_path = model_path
+        # Adjust the preprocessor to include scaling
         self.preprocessor = ColumnTransformer(
             transformers=[
-                ("num", SimpleImputer(strategy="mean"), features),
+                (
+                    "num",
+                    Pipeline(
+                        steps=[
+                            ("imputer", SimpleImputer(strategy="mean")),
+                            ("scaler", StandardScaler()),
+                        ]
+                    ),
+                    features,
+                ),
             ],
             remainder="passthrough",
         )
         print("Preprocessing pipeline initialized.")
 
     def build_nn_model(self, input_shape):
-        """Define and compile the neural network model."""
         model = Sequential(
             [
                 InputLayer(input_shape=(input_shape,)),
-                Dense(256, activation="relu"),
-                Dense(128, activation="relu"),
                 Dense(64, activation="relu"),
+                Dropout(0.35),  # Add dropout to reduce overfitting
                 Dense(32, activation="relu"),
-                Dense(1, activation="sigmoid"),  # Sigmoid for binary classification
+                Dropout(0.35),  # Add dropout
+                Dense(1, activation="sigmoid"),
             ]
         )
         model.compile(
-            optimizer=Adam(), loss="binary_crossentropy", metrics=["accuracy"]
+            optimizer=optimizer,  # Adjust learning rate if necessary
+            loss="binary_crossentropy",
+            metrics=["accuracy"],
         )
         return model
 
@@ -129,8 +166,8 @@ class StatTypeNNModel:
         self.model.fit(
             X_train_preprocessed,
             y_train,
-            epochs=500,
-            batch_size=32,
+            epochs=1000,
+            batch_size=24,
             verbose=1,
             validation_data=(X_test_preprocessed, y_test),
             callbacks=callbacks,
@@ -157,13 +194,14 @@ class StatTypeNNModel:
         self.model = self.build_nn_model(X_train.shape[1])
 
         # Train the model
-        self.model.fit(
+        self.history = self.model.fit(
             X_train,
             y_train,
-            epochs=100,
-            batch_size=32,
+            epochs=1000,
+            batch_size=24,
             verbose=1,
             validation_data=(X_test, y_test),
+            callbacks=callbacks,
         )
 
         # Save the trained model
@@ -209,6 +247,25 @@ class StatTypeNNModel:
                 df_to_save.to_excel(writer, sheet_name=stat_type, index=False)
 
         print("Predictions saved in 'NN_Predictions_for_today.xlsx'")
+
+    def plot_training(self):
+        # Plot training & validation accuracy values
+        plt.plot(self.history.history["accuracy"])
+        plt.plot(self.history.history["val_accuracy"])
+        plt.title("Model accuracy")
+        plt.ylabel("Accuracy")
+        plt.xlabel("Epoch")
+        plt.legend(["Train", "Test"], loc="upper left")
+        plt.show()
+
+        # Plot training & validation loss values
+        plt.plot(self.history.history["loss"])
+        plt.plot(self.history.history["val_loss"])
+        plt.title("Model loss")
+        plt.ylabel("Loss")
+        plt.xlabel("Epoch")
+        plt.legend(["Train", "Test"], loc="upper left")
+        plt.show()
 
 
 # Utility functions like load_model need to be imported if used outside of the training context

@@ -50,7 +50,9 @@ def evaluate_predictions(predictions, actual_outcomes):
 
 
 def just_predictions(today):
-    model.predict_model(today, load_model=True)
+    model.train_with_existing_data(target_column="Covered")
+    model.predict_model(today)
+    model.plot_training()
 
 
 def make_predictions(old_data, todays_data):
@@ -80,6 +82,9 @@ def main():
     """
     Main function to orchestrate the daily data collection, prediction, and adjustment process.
     """
+    todaysdata = load_DKFrame("DataFrames/testoutput.xlsx")
+    just_predictions(todaysdata)
+    quit()
 
     yesterdays_data = load_DKFrame("DataFrames/testoutput.xlsx")
     update_data(yesterdays_data)
