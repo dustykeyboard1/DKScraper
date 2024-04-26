@@ -82,9 +82,9 @@ def main():
     """
     Main function to orchestrate the daily data collection, prediction, and adjustment process.
     """
-    todaysdata = load_DKFrame("DataFrames/testoutput.xlsx")
-    just_predictions(todaysdata)
-    quit()
+    # todaysdata = load_DKFrame("DataFrames/testoutput.xlsx")
+    # just_predictions(todaysdata)
+    # quit()
 
     yesterdays_data = load_DKFrame("DataFrames/testoutput.xlsx")
     update_data(yesterdays_data)
